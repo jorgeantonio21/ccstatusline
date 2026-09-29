@@ -27,7 +27,8 @@ function resolveThinkingEffortFromSettings(): ResolvedThinkingEffort | undefined
 }
 
 function resolveThinkingEffort(context: RenderContext): ResolvedThinkingEffort | null {
-    return getTranscriptThinkingEffort(context.data?.transcript_path)
+    return normalizeThinkingEffort(context.data?.effort?.level)
+        ?? getTranscriptThinkingEffort(context.data?.transcript_path)
         ?? resolveThinkingEffortFromSettings()
         ?? null;
 }
@@ -41,7 +42,7 @@ function formatEffort(resolved: ResolvedThinkingEffort | null): string {
 
 export class ThinkingEffortWidget implements Widget {
     getDefaultColor(): string { return 'magenta'; }
-    getDescription(): string { return 'Displays the current thinking effort level (low, medium, high, xhigh, max).\nUnknown levels are shown with a trailing "?" (e.g. "super-max?").\nMay be incorrect when multiple Claude Code sessions are running due to current Claude Code limitations.'; }
+    getDescription(): string { return 'Displays the current thinking effort level (low, medium, high, xhigh, max).\nRead from the status line payload when Claude Code supplies it, otherwise from the transcript or settings.\nUnknown levels are shown with a trailing "?" (e.g. "super-max?").\nThe transcript and settings fallbacks may be incorrect when multiple Claude Code sessions are running.'; }
     getDisplayName(): string { return 'Thinking Effort'; }
     getCategory(): string { return 'Core'; }
     getEditorDisplay(item: WidgetItem): WidgetEditorDisplay {
