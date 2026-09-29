@@ -70,7 +70,7 @@ describe('ContextBarWidget', () => {
         };
         const widget = new ContextBarWidget();
 
-        expect(widget.render({ id: 'ctx', type: 'context-bar' }, context, DEFAULT_SETTINGS)).toBe('Context: [bar:5.0:16] 50k/1000k (5%)');
+        expect(widget.render({ id: 'ctx', type: 'context-bar' }, context, DEFAULT_SETTINGS)).toBe('Context: [bar:5.0:16] 50k/1M (5%)');
     });
 
     it('uses 1M in parentheses model IDs in fallback mode', () => {
@@ -86,7 +86,26 @@ describe('ContextBarWidget', () => {
         };
         const widget = new ContextBarWidget();
 
-        expect(widget.render({ id: 'ctx', type: 'context-bar' }, context, DEFAULT_SETTINGS)).toBe('Context: [bar:5.0:16] 50k/1000k (5%)');
+        expect(widget.render({ id: 'ctx', type: 'context-bar' }, context, DEFAULT_SETTINGS)).toBe('Context: [bar:5.0:16] 50k/1M (5%)');
+    });
+
+    it('formats fractional millions with one decimal place', () => {
+        const context: RenderContext = {
+            data: {
+                context_window: {
+                    context_window_size: 1000000,
+                    current_usage: {
+                        input_tokens: 1500000,
+                        output_tokens: 0,
+                        cache_creation_input_tokens: 0,
+                        cache_read_input_tokens: 0
+                    }
+                }
+            }
+        };
+        const widget = new ContextBarWidget();
+
+        expect(widget.render({ id: 'ctx', type: 'context-bar' }, context, DEFAULT_SETTINGS)).toBe('Context: [bar:100.0:16] 1.5M/1M (100%)');
     });
 
     it('clamps usage percentage to 100 when context length exceeds total', () => {

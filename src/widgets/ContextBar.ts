@@ -19,6 +19,15 @@ function getDisplayMode(item: WidgetItem): DisplayMode {
     return item.metadata?.display === 'progress' ? 'progress' : 'progress-short';
 }
 
+function formatBarTokens(count: number): string {
+    const countK = Math.round(count / 1000);
+    if (countK < 1000) {
+        return `${countK}k`;
+    }
+
+    return `${Math.round(count / 100000) / 10}M`;
+}
+
 export class ContextBarWidget implements Widget {
     getDefaultColor(): string { return 'blue'; }
     getDescription(): string { return 'Shows context usage as a progress bar'; }
@@ -86,9 +95,7 @@ export class ContextBarWidget implements Widget {
         const percent = (used / total) * 100;
         const clampedPercent = Math.max(0, Math.min(100, percent));
 
-        const usedK = Math.round(used / 1000);
-        const totalK = Math.round(total / 1000);
-        const display = `${makeUsageProgressBar(clampedPercent, barWidth)} ${usedK}k/${totalK}k (${Math.round(clampedPercent)}%)`;
+        const display = `${makeUsageProgressBar(clampedPercent, barWidth)} ${formatBarTokens(used)}/${formatBarTokens(total)} (${Math.round(clampedPercent)}%)`;
 
         return item.rawValue ? display : `Context: ${display}`;
     }
