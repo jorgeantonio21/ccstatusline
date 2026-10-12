@@ -47,6 +47,7 @@ function makeTranscriptEntry(content: string): string {
 function render(options: {
     transcriptPath?: string;
     fileContent?: string | null | undefined;
+    payloadEffort?: { level?: string } | null;
     rawValue?: boolean;
     isPreview?: boolean;
     settingsValue?: unknown;
@@ -54,14 +55,19 @@ function render(options: {
     const {
         transcriptPath = options.fileContent !== undefined ? path.join(tempDir, 'session.jsonl') : undefined,
         fileContent,
+        payloadEffort,
         rawValue = false,
         isPreview = false,
         settingsValue = {}
     } = options;
 
     const widget = new ThinkingEffortWidget();
+    const data = {
+        ...transcriptPath ? { transcript_path: transcriptPath } : {},
+        ...payloadEffort !== undefined ? { effort: payloadEffort } : {}
+    };
     const context: RenderContext = {
-        data: transcriptPath ? { transcript_path: transcriptPath } : undefined,
+        data: Object.keys(data).length > 0 ? data : undefined,
         isPreview
     };
     const item: WidgetItem = {
@@ -121,6 +127,48 @@ describe('ThinkingEffortWidget', () => {
         it('returns raw preview', () => {
             const result = render({ isPreview: true, rawValue: true });
             expect(result).toBe('high');
+        });
+    });
+
+    describe('status line payload source', () => {
+        it('reads the effort level supplied by Claude Code', () => {
+            const result = render({ payloadEffort: { level: 'xhigh' } });
+            expect(result).toBe('Thinking: xhigh');
+        });
+
+        it('returns the raw payload effort when requested', () => {
+            const result = render({ payloadEffort: { level: 'max' }, rawValue: true });
+            expect(result).toBe('max');
+        });
+
+        it('takes precedence over the transcript and settings', () => {
+            const result = render({
+                payloadEffort: { level: 'low' },
+                fileContent: makeTranscriptEntry(MODEL_WITH_HIGH_EFFORT),
+                settingsValue: { effortLevel: 'medium' }
+            });
+            expect(result).toBe('Thinking: low');
+        });
+
+        it('lowercases and marks an unknown payload effort', () => {
+            const result = render({ payloadEffort: { level: 'Super-Max' } });
+            expect(result).toBe('Thinking: super-max?');
+        });
+
+        it('falls back when the payload carries no effort', () => {
+            const result = render({
+                payloadEffort: null,
+                fileContent: makeTranscriptEntry(MODEL_WITH_HIGH_EFFORT)
+            });
+            expect(result).toBe('Thinking: high');
+        });
+
+        it('falls back when the payload effort level is empty', () => {
+            const result = render({
+                payloadEffort: { level: '' },
+                settingsValue: { effortLevel: 'medium' }
+            });
+            expect(result).toBe('Thinking: medium');
         });
     });
 
